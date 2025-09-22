@@ -45,6 +45,7 @@ node index.js
 * Chat en temps réel avec Socket.io
 * Interface simple et épurée
 * Gestion des utilisateurs connectés
+* Stockage persistant des messages dans une base de données (MongoDB, Firebase, etc.)
 
 ## Futurs ajouts / améliorations
 
@@ -53,6 +54,5 @@ node index.js
 * Intégration d'émoticônes et réactions aux messages
 * Notifications pour les nouveaux messages
 * Authentification des utilisateurs avec JWT ou OAuth
-* Stockage persistant des messages dans une base de données (MongoDB, Firebase, etc.)
 * Déploiement en ligne sur Heroku, Vercel ou Netlify
 * Amélioration de l'accessibilité et du design UI/UX
