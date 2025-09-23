@@ -1,0 +1,358 @@
+/* === Global === */
+body {
+    background: #1a1f2e;
+    color: #f3f3f3;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+.dashboard {
+    width: 100vw;
+    min-height: 100vh;
+}
+
+/* === Header === */
+.dashboard-header {
+    padding: 1.5rem 2rem;
+    background: #1a1f2e;
+    border-bottom: 2px solid #2d3748;
+}
+
+.dashboard-header h1 {
+    color: #4fd1c7;
+    font-size: 1.8rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+/* === Grid === */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: auto auto auto auto auto;
+    gap: 1rem;
+    padding: 1.5rem;
+}
+
+/* === Card base === */
+.card {
+    background: #2d3748;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    transition: box-shadow 0.2s ease;
+    border: 1px solid #4a5568;
+}
+
+.card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* === Stats (ligne 1) === */
+.card.stat {
+    grid-row: 1;
+    grid-column: span 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 100px;
+    flex-direction: column;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+}
+
+.stat-title {
+    font-size: 0.875rem;
+    color: #a0aec0;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+/* Couleurs spécifiques pour les stats */
+.card.stat.uptime .stat-value { color: #9f7aea; }
+.card.stat.cpu .stat-value { color: #4fd1c7; }
+.card.stat.ram .stat-value { color: #63b3ed; }
+.card.stat.power .stat-value { color: #f093fb; }
+.card.stat.bw-in .stat-value { color: #68d391; }
+.card.stat.bw-out .stat-value { color: #f6ad55; }
+.card.stat.users .stat-value { color: #fbb6ce; }
+
+/* === Graphiques (lignes 2 et 3) === */
+.card.graph {
+    grid-column: span 6;
+    min-height: 350px;
+    max-height: 450px;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Placement spécifique des graphiques */
+.card.graph:nth-of-type(8) { /* CPU & RAM */
+    grid-row: 2;
+    grid-column: 1 / span 6;
+}
+
+.card.graph:nth-of-type(9) { /* Bandwidth */
+    grid-row: 2;
+    grid-column: 7 / span 6;
+}
+
+.card.graph:nth-of-type(10) { /* Power */
+    grid-row: 3;
+    grid-column: 1 / span 6;
+}
+
+.card.graph:nth-of-type(11) { /* Users */
+    grid-row: 3;
+    grid-column: 7 / span 6;
+}
+
+.graph-title {
+    font-size: 0.875rem;
+    color: #a0aec0;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+canvas {
+    background: #1a202c;
+    border-radius: 4px;
+    margin-bottom: 0;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+    width: 100% !important;
+    max-width: 100%;
+    height: 280px !important;
+    max-height: 380px;
+    display: block;
+    border: 1px solid #2d3748;
+}
+
+/* === Logs (ligne 4 et 5) - Beaucoup plus larges === */
+.card.logs {
+    grid-column: 1 / span 12; /* Utilise toute la largeur de la grille */
+    min-height: 400px;
+    max-height: 600px;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    padding: 1.5rem 2rem; /* Plus de padding horizontal */
+    display: flex;
+    flex-direction: column;
+}
+
+.card.logs .graph-title {
+    font-size: 0.875rem;
+    color: #a0aec0;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.card.logs pre {
+    flex: 1;
+    margin: 0;
+    background: #1a202c;
+    color: #e2e8f0;
+    border-radius: 4px;
+    padding: 1.5rem 2rem; /* Plus de padding pour une meilleure lisibilité */
+    overflow: auto;
+    font-size: 0.85rem; /* Légèrement plus grand */
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    border: 1px solid #2d3748;
+    width: 100%;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+    line-height: 1.6; /* Plus d'espace entre les lignes */
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Placement des logs sur toute la largeur */
+.card.logs.stdout {
+    grid-row: 4;
+    margin-bottom: 1rem;
+}
+
+.card.logs.stderr {
+    grid-row: 5;
+}
+
+/* === Button === */
+.refresh-btn {
+    background: #4fd1c7;
+    color: #1a202c;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 1rem 1.5rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(79, 209, 199, 0.3);
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.refresh-btn:hover {
+    background: #38b2ac;
+    box-shadow: 0 4px 8px rgba(79, 209, 199, 0.4);
+    transform: translateY(-1px);
+}
+
+/* === Responsive === */
+@media (max-width: 1600px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(8, 1fr);
+    }
+    .card.stat {
+        grid-column: span 1;
+    }
+    .card.graph:nth-of-type(8) { /* CPU & RAM */
+        grid-row: 2;
+        grid-column: 1 / span 4;
+    }
+    .card.graph:nth-of-type(9) { /* Bandwidth */
+        grid-row: 2;
+        grid-column: 5 / span 4;
+    }
+    .card.graph:nth-of-type(10) { /* Power */
+        grid-row: 3;
+        grid-column: 1 / span 4;
+    }
+    .card.graph:nth-of-type(11) { /* Users */
+        grid-row: 3;
+        grid-column: 5 / span 4;
+    }
+    .card.logs.stdout,
+    .card.logs.stderr {
+        grid-column: 1 / span 8;
+    }
+}
+
+@media (max-width: 1400px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+    .card.stat {
+        grid-column: span 1;
+    }
+    .card.graph:nth-of-type(8) { /* CPU & RAM */
+        grid-row: 2;
+        grid-column: 1 / span 3;
+    }
+    .card.graph:nth-of-type(9) { /* Bandwidth */
+        grid-row: 2;
+        grid-column: 4 / span 3;
+    }
+    .card.graph:nth-of-type(10) { /* Power */
+        grid-row: 3;
+        grid-column: 1 / span 3;
+    }
+    .card.graph:nth-of-type(11) { /* Users */
+        grid-row: 3;
+        grid-column: 4 / span 3;
+    }
+    .card.logs.stdout,
+    .card.logs.stderr {
+        grid-column: 1 / span 6;
+    }
+}
+
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .card.stat {
+        grid-column: span 1;
+    }
+    .card.graph {
+        grid-column: span 4 !important;
+        grid-row: auto !important;
+    }
+    .card.logs.stdout,
+    .card.logs.stderr {
+        grid-column: span 4;
+    }
+}
+
+@media (max-width: 900px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .card.stat,
+    .card.graph,
+    .card.logs.stdout,
+    .card.logs.stderr {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 600px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+    .card.stat,
+    .card.graph,
+    .card.logs.stdout,
+    .card.logs.stderr {
+        grid-column: span 1;
+    }
+    
+    .dashboard-header {
+        padding: 1rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .card.graph {
+        min-height: 320px;
+    }
+    
+    canvas {
+        height: 240px !important;
+    }
+    
+    .card.logs {
+        padding: 1rem;
+    }
+    
+    .card.logs pre {
+        padding: 1rem;
+        font-size: 0.8rem;
+    }
+}

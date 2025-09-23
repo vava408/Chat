@@ -7,37 +7,47 @@ const { open } = require('sqlite');
 
 async function main() {
 	const db = await open({
-		filename: 'Chat.db',
-		driver: sqlite3.Database
+	    filename: join(__dirname, 'Chat.db'),
+	    driver: sqlite3.Database
 	});
 
 	await db.exec(`
-    CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      client_offset TEXT UNIQUE,
-      content TEXT
-    );
-  `);
+	    CREATE TABLE IF NOT EXISTS messages (
+	      id INTEGER PRIMARY KEY AUTOINCREMENT,
+	      client_offset TEXT UNIQUE,
+	      content TEXT
+	    );
+	`);
 
 	const app = express();
 	const server = createServer(app);
-	const io = new Server(server, {
-		connectionStateRecovery: {}
-	});
+	const io = new Server(server, { connectionStateRecovery: {} });
 
-	// routes
+	// --- routes principales ---
 	const indexRoute = require('./routes/index.js');
 	app.use('/', indexRoute);
 
-	// fichiers statiques
+	// --- router PM2 ---
+	const { router: pm2Router, bandwidthMiddleware } = require('./routes/api');
+	app.use(bandwidthMiddleware);
+	app.use('/api', pm2Router);
+
+	// --- fichiers statiques (front) ---
 	app.use(express.static(join(__dirname, '../public')));
 
-	// sockets
+	// --- sockets ---
 	const setupSocket = require('./config/socket');
-	setupSocket(io , db);
+	const socketModule = setupSocket(io, db);
 
-	server.listen(3001, () => {
-		console.log('Server running at http://localhost:3001');
+	// --- API pour récupérer nombre de connectés + historique ---
+	app.get('/api/users', (req, res) => {
+		res.json(socketModule.getUsersData());
+	});
+
+	// --- démarrage serveur ---
+	const PORT = 3001;
+	server.listen(PORT, () => {
+		console.log(`✅ Server running at http://localhost:${PORT}`);
 	});
 }
 

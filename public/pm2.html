@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Dashboard PM2 - Server</title>
+    <link rel="stylesheet" href="css/pm2.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="dashboard-header">
+            <h1><span class="icon">🖥️</span> Dashboard PM2 <span id="server-name">server</span></h1>
+        </div>
+        <div class="dashboard-grid">
+            <!-- Stat cards -->
+            <div class="card stat uptime">
+                <div class="stat-title">Uptime</div>
+                <div class="stat-value" id="stat-uptime">--</div>
+            </div>
+            <div class="card stat cpu">
+                <div class="stat-title">CPU (%)</div>
+                <div class="stat-value" id="stat-cpu">--</div>
+            </div>
+            <div class="card stat ram">
+                <div class="stat-title">RAM (MB)</div>
+                <div class="stat-value" id="stat-ram">--</div>
+            </div>
+            <div class="card stat power">
+                <div class="stat-title">Power (W)</div>
+                <div class="stat-value" id="stat-power">--</div>
+            </div>
+            <div class="card stat bw-in">
+                <div class="stat-title">Bandwidth IN (KB)</div>
+                <div class="stat-value" id="stat-bw-in">--</div>
+            </div>
+            <div class="card stat bw-out">
+                <div class="stat-title">Bandwidth OUT (KB)</div>
+                <div class="stat-value" id="stat-bw-out">--</div>
+            </div>
+            <!-- 🔥 Nouvelle carte utilisateurs -->
+            <div class="card stat users">
+                <div class="stat-title">Utilisateurs connectés</div>
+                <div class="stat-value" id="stat-users">--</div>
+            </div>
+
+            <!-- Graphs -->
+            <div class="card graph">
+                <div class="graph-title">CPU & RAM</div>
+                <canvas id="cpuRamChart"></canvas>
+            </div>
+            <div class="card graph">
+                <div class="graph-title">Bandwidth</div>
+                <canvas id="bandwidthChart"></canvas>
+            </div>
+            <div class="card graph">
+                <div class="graph-title">Power</div>
+                <canvas id="powerChart"></canvas>
+            </div>
+            <!-- 🔥 Nouveau graphique utilisateurs -->
+            <div class="card graph">
+                <div class="graph-title">Utilisateurs connectés (historique)</div>
+                <canvas id="usersChart"></canvas>
+            </div>
+
+            <!-- Logs -->
+            <div class="card logs">
+                <div class="graph-title">Logs stdout</div>
+                <pre id="log-out">Chargement...</pre>
+            </div>
+            <div class="card logs">
+                <div class="graph-title">Logs stderr</div>
+                <pre id="log-err">Chargement...</pre>
+            </div>
+        </div>
+        <button class="refresh-btn" onclick="refreshInfo()">Rafraîchir</button>
+    </div>
+    <script>
+        let cpuRamChart, bandwidthChart, powerChart, usersChart;
+        let logOutPath = '';
+        let logErrPath = '';
+
+        let lastProcessUptime = 0;
+        let lastProcessUptimeUpdate = Date.now();
+
+        function formatUptime(ms) {
+            let sec = Math.floor(ms / 1000);
+            let min = Math.floor(sec / 60);
+            let hr = Math.floor(min / 60);
+            let day = Math.floor(hr / 24);
+            hr = hr % 24;
+            min = min % 60;
+            sec = sec % 60;
+            return `${day}j ${hr}h ${min}m ${sec}s`;
+        }
+
+        function getChartOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff',
+                            font: { size: 16, family: "'Segoe UI', Arial, sans-serif" },
+                            boxWidth: 18,
+                            padding: 20
+                        }
+                    }
+                },
+                layout: {
+                    padding: 20
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#6ec1e4', font: { size: 14 } },
+                        grid: { color: '#23283a' }
+                    },
+                    y: {
+                        ticks: { color: '#6ec1e4', font: { size: 14 } },
+                        grid: { color: '#23283a' }
+                    }
+                }
+            };
+        }
+
+        function renderCharts(stats) {
+            const labels = stats.map(s => new Date(s.time).toLocaleTimeString());
+            const cpuData = stats.map(s => s.cpu);
+            const ramData = stats.map(s => s.memory);
+            const bandwidthInData = stats.map(s => s.bandwidth?.in / 1024 || 0);
+            const bandwidthOutData = stats.map(s => s.bandwidth?.out / 1024 || 0);
+            const powerTotalData = stats.map(s => s.power?.total || 0);
+
+            // CPU & RAM (ligne double)
+            if (!cpuRamChart) {
+                cpuRamChart = new Chart(document.getElementById('cpuRamChart'), {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'CPU (%)', data: cpuData, borderColor: 'blue', backgroundColor: 'rgba(0,0,255,0.1)', tension: 0.3, pointRadius: 2 },
+                            { label: 'RAM (MB)', data: ramData, borderColor: 'green', backgroundColor: 'rgba(0,255,0,0.1)', tension: 0.3, pointRadius: 2 }
+                        ]
+                    },
+                    options: getChartOptions()
+                });
+            } else {
+                cpuRamChart.data.labels = labels;
+                cpuRamChart.data.datasets[0].data = cpuData;
+                cpuRamChart.data.datasets[1].data = ramData;
+                cpuRamChart.update();
+            }
+
+            // Bande passante (barres)
+            if (!bandwidthChart) {
+                bandwidthChart = new Chart(document.getElementById('bandwidthChart'), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'IN (KB)', data: bandwidthInData, backgroundColor: 'orange' },
+                            { label: 'OUT (KB)', data: bandwidthOutData, backgroundColor: 'red' }
+                        ]
+                    },
+                    options: getChartOptions()
+                });
+            } else {
+                bandwidthChart.data.labels = labels;
+                bandwidthChart.data.datasets[0].data = bandwidthInData;
+                bandwidthChart.data.datasets[1].data = bandwidthOutData;
+                bandwidthChart.update();
+            }
+
+            // Power (ligne)
+            if (!powerChart) {
+                powerChart = new Chart(document.getElementById('powerChart'), {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Power (W)', data: powerTotalData, borderColor: 'magenta', backgroundColor: 'rgba(255,0,255,0.1)', tension: 0.3, pointRadius: 2 }
+                        ]
+                    },
+                    options: getChartOptions()
+                });
+            } else {
+                powerChart.data.labels = labels;
+                powerChart.data.datasets[0].data = powerTotalData;
+                powerChart.update();
+            }
+        }
+
+        function updateProcessUptimeDisplay() {
+            if (lastProcessUptime > 0) {
+                const now = Date.now();
+                const elapsed = now - lastProcessUptimeUpdate;
+                const currentUptime = lastProcessUptime + elapsed;
+                document.getElementById('stat-uptime').textContent = formatUptime(currentUptime);
+            }
+        }
+
+        async function fetchPm2Info() {
+            const res = await fetch('/api/pm2-info?name=server');
+
+            if (!res.ok) return;
+            const info = await res.json();
+
+            // Stocke la valeur et la date de réception
+            lastProcessUptime = typeof info.uptime === 'number' && !isNaN(info.uptime) ? info.uptime : 0;
+            lastProcessUptimeUpdate = Date.now();
+
+            // Affiche la première fois
+            document.getElementById('stat-uptime').textContent = formatUptime(lastProcessUptime);
+
+            document.getElementById('stat-cpu').textContent = info.cpu + ' %';
+            document.getElementById('stat-ram').textContent = info.memory + ' MB';
+            document.getElementById('stat-power').textContent = info.power.total + ' W';
+
+            document.getElementById('stat-bw-in').textContent = (info.bandwidth5min.in / 1024).toFixed(2);
+            document.getElementById('stat-bw-out').textContent = (info.bandwidth5min.out / 1024).toFixed(2);
+
+            const logs = info.logs || { out: '', err: '' };
+            logOutPath = logs.out;
+            logErrPath = logs.err;
+            renderCharts(info.statsHistory);
+            fetchPm2Logs();
+        }
+
+        function refreshInfo() {
+            fetchPm2Info();
+            fetchUsersInfo();
+        }
+
+        async function fetchPm2Logs() {
+            if (!logOutPath || !logErrPath) return;
+            const res = await fetch(`/api/pm2-logs?out=${encodeURIComponent(logOutPath)}&err=${encodeURIComponent(logErrPath)}&lines=50`);
+            if (!res.ok) {
+                document.getElementById('log-out').textContent = 'Erreur logs';
+                document.getElementById('log-err').textContent = 'Erreur logs';
+                return;
+            }
+            const logs = await res.json();
+            document.getElementById('log-out').textContent = logs.out;
+            document.getElementById('log-err').textContent = logs.err;
+        }
+
+        // 🔥 Nouvelle fonction : utilisateurs connectés
+        async function fetchUsersInfo() {
+            const res = await fetch('/api/users');
+            if (!res.ok) return;
+
+            const data = await res.json();
+
+            // maj stat
+            document.getElementById('stat-users').textContent = data.connected;
+
+            // maj graphique
+            const labels = data.history.map(h => new Date(h.time).toLocaleTimeString());
+            const counts = data.history.map(h => h.count);
+
+            if (!usersChart) {
+                usersChart = new Chart(document.getElementById('usersChart'), {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Utilisateurs connectés',
+                                data: counts,
+                                borderColor: 'cyan',
+                                backgroundColor: 'rgba(0,255,255,0.1)',
+                                tension: 0.3,
+                                pointRadius: 2
+                            }
+                        ]
+                    },
+                    options: getChartOptions()
+                });
+            } else {
+                usersChart.data.labels = labels;
+                usersChart.data.datasets[0].data = counts;
+                usersChart.update();
+            }
+        }
+
+        // Interval updates
+        setInterval(updateProcessUptimeDisplay, 1000);
+        setInterval(fetchPm2Info, 3000);
+        setInterval(fetchPm2Logs, 2000);
+        setInterval(fetchUsersInfo, 3000);
+
+        // init
+        fetchPm2Info();
+        fetchUsersInfo();
+    </script>
+</body>
+</html>
