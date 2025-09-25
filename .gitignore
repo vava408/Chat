@@ -20,3 +20,6 @@ build/
 .cache/
 .next/
 out/
+
+# Avatars uploadés
+server/avatar/

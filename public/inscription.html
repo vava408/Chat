@@ -4,9 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/inscription.css">
-    <title>Document</title>
+    <title>Inscription</title>
 </head>
 <body>
-    
+    <div class="form-container">
+        <h2>Inscription</h2>
+        <form action="/register" method="POST" enctype="multipart/form-data">
+            <input name="username" type="text" placeholder="Nom d'utilisateur" required>
+            <input name="password" type="password" placeholder="Mot de passe" required>
+
+            <div class="avatar-container">
+                <input id="input-avatar" name="avatar" type="file" accept="image/jpeg, image/png">
+                <img id="avatar-preview" src="" alt="Aperçu" />
+            </div>
+
+            <button type="submit">S'inscrire</button>
+        </form>
+    </div>
+
+    <script>
+        const avatarInput = document.getElementById('input-avatar');
+        const avatarPreview = document.getElementById('avatar-preview');
+
+        avatarInput.addEventListener('change', () => {
+            const file = avatarInput.files[0];
+            if(file) {
+                avatarPreview.src = URL.createObjectURL(file);
+            }
+        });
+    </script>
 </body>
 </html>
