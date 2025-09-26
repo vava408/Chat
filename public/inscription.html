@@ -1,12 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/inscription.css">
-    <title>Document</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inscription</title>
+<link rel="stylesheet" href="./css/inscription.css">
+<style>
+.avatar-container img {
+    display: none;
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-top: 10px;
+}
+</style>
 </head>
 <body>
-    
+<div class="form-container">
+    <h2>Inscription</h2>
+    <form id="register-form" enctype="multipart/form-data">
+        <input name="username" type="text" placeholder="Nom d'utilisateur" required autocomplete="username">
+        <input name="password" type="password" placeholder="Mot de passe" required autocomplete="new-password">
+        <div class="avatar-container">
+            <input id="input-avatar" name="avatar" type="file" accept="image/jpeg, image/png">
+            <img id="avatar-preview" alt="Aperçu" />
+        </div>
+        <button type="submit">S'inscrire</button>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('register-form');
+    const avatarInput = document.getElementById('input-avatar');
+    const avatarPreview = document.getElementById('avatar-preview');
+
+    avatarInput.addEventListener('change', () => {
+        const file = avatarInput.files[0];
+        if (file) {
+            avatarPreview.src = URL.createObjectURL(file);
+            avatarPreview.style.display = 'block';
+        } else {
+            avatarPreview.src = '';
+            avatarPreview.style.display = 'none';
+        }
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+
+        try {
+            const res = await fetch('/register', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                // Stocker le pseudo pour la page chat
+                sessionStorage.setItem('username', data.username);
+                sessionStorage.setItem('avatar', data.avatar);
+
+                // Redirection vers chat
+                window.location.href = '/index.html';
+            } else {
+                alert(data.message);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Erreur serveur');
+        }
+    });
+});
+</script>
 </body>
 </html>
